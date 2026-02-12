@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>TI Assets PR01 - Master Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f172a', darkcard: '#1e293b' } } } }
+    </script>
+    <style>
+        .chart-container { position: relative; height: 220px; width: 100%; }
+        .section { display: none; }
+        .section.active { display: block; }
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 text-[11px]">
+    
+    <div id="toast-container" class="space-y-2"></div>
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-56 bg-slate-900 text-white p-5 shadow-xl flex flex-col shrink-0 border-r dark:border-slate-800">
+            <h1 class="text-xl font-black mb-10 text-blue-500 italic tracking-tighter uppercase">TI.PR01</h1>
+            <nav class="space-y-1 flex-1 font-bold">
+                <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-chart-pie mr-3 text-blue-400"></i>Dashboard</button>
+                <button onclick="showSection('notebooks')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-laptop mr-3 text-indigo-400"></i>Notebooks</button>
+                <button onclick="showSection('handhelds')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-mobile-alt mr-3 text-green-400"></i>Handhelds</button>
+                <button onclick="showSection('printers')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-print mr-3 text-purple-400"></i>Impressoras</button>
+            </nav>
+            <div class="space-y-2 border-t border-slate-800 pt-4">
+                <button onclick="exportToExcel()" class="w-full p-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-black uppercase transition text-[9px]"><i class="fas fa-file-export mr-2"></i>Exportar Excel</button>
+                <button onclick="toggleDarkMode()" class="w-full p-3 bg-slate-800 rounded-xl hover:bg-slate-700 transition"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block text-yellow-400"></i> Tema</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0">
+            <header class="h-14 bg-white dark:bg-darkcard border-b dark:border-slate-700 px-8 flex items-center justify-between shadow-sm shrink-0">
+                <h2 class="text-lg font-black uppercase tracking-widest" id="page-title">DASHBOARD</h2>
+                <div class="flex items-center gap-3">
+                    <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition">NOVO ITEM</button>
+                    <button onclick="loadLocalFile()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-blue-500 hover:text-white transition"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-auto p-8 space-y-8">
+                <div id="dashboard" class="section active space-y-8">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-xl shadow-sm border-b-4 border-blue-500"><h3 class="opacity-50 font-bold uppercase text-[9px]">Notebooks</h3><p class="text-2xl font-black" id="dash-nb-total">0</p></div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-xl shadow-sm border-b-4 border-indigo-500 text-indigo-500"><h3 class="opacity-50 font-bold uppercase text-[9px]">Backup</h3><p class="text-2xl font-black" id="dash-nb-backup">0</p></div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-xl shadow-sm border-b-4 border-yellow-500 text-yellow-500"><h3 class="opacity-50 font-bold uppercase text-[9px]">Formatar</h3><p class="text-2xl font-black" id="dash-nb-format">0</p></div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-xl shadow-sm border-b-4 border-red-500 text-red-500"><h3 class="opacity-50 font-bold uppercase text-[9px]">Desligados</h3><p class="text-2xl font-black" id="dash-nb-off">0</p></div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-xl shadow-sm border-b-4 border-purple-500 text-purple-500"><h3 class="opacity-50 font-bold uppercase text-[9px]">Printers</h3><p class="text-2xl font-black" id="dash-pr-total">0</p></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm h-[320px] flex flex-col items-center justify-center">
+                            <h4 class="font-bold mb-4 opacity-50 uppercase">Status Notebooks</h4>
+                            <div class="chart-container"><canvas id="chartNB"></canvas></div>
+                        </div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm h-[320px] flex flex-col items-center justify-center">
+                            <h4 class="font-bold mb-4 opacity-50 uppercase">Handhelds</h4>
+                            <div class="chart-container"><canvas id="chartHH"></canvas></div>
+                        </div>
+                        <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm h-[320px] flex flex-col items-center justify-center">
+                            <h4 class="font-bold mb-4 opacity-50 uppercase">Geral</h4>
+                            <div class="chart-container"><canvas id="chartGeneral"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="notebooks" class="section space-y-4">
+                    <input type="text" onkeyup="filterMultiTables(this.value)" placeholder="Buscar notebook..." class="w-full p-3 rounded-xl dark:bg-darkcard border dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 sticky top-0 z-10 shadow-lg">
+                    
+                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                        <button onclick="toggleAccordion('wrap-backup', 'arrow-backup')" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                <h3 class="font-black uppercase tracking-widest text-indigo-500">Estoque Backup <span id="count-backup" class="ml-1 opacity-50 text-[9px]"></span></h3>
+                            </div>
+                            <i id="arrow-backup" class="fas fa-chevron-down transition-transform duration-300"></i>
+                        </button>
+                        <div id="wrap-backup" class="overflow-hidden transition-all duration-300">
+                            <table class="w-full text-left border-t dark:border-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold uppercase"><tr><th class="p-3">SERIAL</th><th class="p-3">MODELO</th><th class="p-3 text-right">AÇÕES</th></tr></thead>
+                                <tbody id="tb-backup" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                        <button onclick="toggleAccordion('wrap-format', 'arrow-format')" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <h3 class="font-black uppercase tracking-widest text-yellow-500">Aguardando Formatação <span id="count-format" class="ml-1 opacity-50 text-[9px]"></span></h3>
+                            </div>
+                            <i id="arrow-format" class="fas fa-chevron-down transition-transform duration-300"></i>
+                        </button>
+                        <div id="wrap-format" class="overflow-hidden transition-all duration-300">
+                            <table class="w-full text-left border-t dark:border-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold uppercase"><tr><th class="p-3">SERIAL</th><th class="p-3">MODELO</th><th class="p-3 text-right">AÇÕES</th></tr></thead>
+                                <tbody id="tb-format" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                        <button onclick="toggleAccordion('wrap-off', 'arrow-off')" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <h3 class="font-black uppercase tracking-widest text-red-500">Desligados / Sucata <span id="count-off" class="ml-1 opacity-50 text-[9px]"></span></h3>
+                            </div>
+                            <i id="arrow-off" class="fas fa-chevron-down transition-transform duration-300"></i>
+                        </button>
+                        <div id="wrap-off" class="overflow-hidden transition-all duration-300">
+                            <table class="w-full text-left border-t dark:border-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold uppercase"><tr><th class="p-3">SERIAL</th><th class="p-3">MODELO</th><th class="p-3 text-right">AÇÕES</th></tr></thead>
+                                <tbody id="tb-off" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="handhelds" class="section space-y-4">
+                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm overflow-hidden border dark:border-slate-700">
+                        <table class="w-full text-left"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 text-slate-500 font-bold uppercase"><tr><th class="p-4">ID</th><th class="p-4">SERIAL</th><th class="p-4">STATUS</th><th class="p-4 text-right">AÇÕES</th></tr></thead><tbody id="tb-handhelds" class="divide-y dark:divide-slate-700"></tbody></table>
+                    </div>
+                </div>
+
+                <div id="printers" class="section space-y-4">
+                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm overflow-hidden border dark:border-slate-700">
+                        <table class="w-full text-left"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 text-slate-500 font-bold uppercase"><tr><th class="p-4">ID</th><th class="p-4">IP</th><th class="p-4">SERIAL</th><th class="p-4 text-right">AÇÕES</th></tr></thead><tbody id="tb-printers" class="divide-y dark:divide-slate-700"></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden z-50 text-slate-900">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl text-xs">
+            <h3 id="m-title" class="text-xl font-black mb-6 uppercase">Gerenciar Ativo</h3>
+            <div class="space-y-4 font-bold">
+                <div><label class="opacity-40 uppercase text-[9px]">Tipo</label>
+                <select id="m_type" onchange="updateModalType(this.value)" class="w-full p-3 bg-slate-100 rounded-xl outline-none">
+                    <option value="nb">Notebook</option><option value="hh">Handheld</option><option value="pr">Impressora</option>
+                </select></div>
+                <div><label class="opacity-40 uppercase text-[9px]">Serial Number</label><input type="text" id="m_sn" class="w-full p-3 bg-slate-100 rounded-xl outline-none uppercase"></div>
+                <div><label class="opacity-40 uppercase text-[9px]">Modelo / IP</label><input type="text" id="m_mod" class="w-full p-3 bg-slate-100 rounded-xl outline-none"></div>
+                <div id="m_stat_container"><label class="opacity-40 uppercase text-[9px]">Status</label>
+                <select id="m_stat" class="w-full p-3 bg-slate-100 rounded-xl outline-none">
+                    <option value="Backup">Backup</option><option value="Formatação">Formatação</option><option value="Desligado">Desligado</option><option value="Em Operação">Em Operação</option><option value="Ok">Ok (Handheld)</option>
+                </select></div>
+                <div class="flex gap-2 pt-4">
+                    <button onclick="closeModal()" class="flex-1 p-3 text-slate-400">CANCELAR</button>
+                    <button onclick="saveLocalChange()" class="flex-1 p-3 bg-blue-600 text-white font-black rounded-xl shadow-lg">SALVAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
