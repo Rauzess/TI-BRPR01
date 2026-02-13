@@ -30,7 +30,7 @@
                 <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-chart-pie mr-3 text-blue-400"></i>Dashboard</button>
                 <button onclick="showSection('notebooks')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-laptop mr-3 text-indigo-400"></i>Notebooks</button>
                 <button onclick="showSection('handhelds')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-mobile-alt mr-3 text-green-400"></i>Handhelds</button>
-                <button onclick="showSection('printers')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-print mr-3 text-purple-400"></i>Impressoras</button>
+                <button onclick="showSection('printers')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition"><i class="fas fa-print mr-3 text-purple-400"></i>Impressoras Portáteis</button>
             </nav>
             <div class="space-y-2 border-t border-slate-800 pt-4">
                 <button onclick="exportToExcel()" class="w-full p-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-black uppercase transition text-[9px]"><i class="fas fa-file-export mr-2"></i>Exportar Excel</button>
@@ -146,7 +146,7 @@
             <div class="space-y-4 font-bold">
                 <div><label class="opacity-40 uppercase text-[9px]">Tipo</label>
                 <select id="m_type" onchange="updateModalType(this.value)" class="w-full p-3 bg-slate-100 rounded-xl outline-none">
-                    <option value="nb">Notebook</option><option value="hh">Handheld</option><option value="pr">Impressora</option>
+                    <option value="nb">Notebook</option><option value="hh">Handheld</option><option value="pr">Impressora Portátil</option>
                 </select></div>
                 <div><label class="opacity-40 uppercase text-[9px]">Serial Number</label><input type="text" id="m_sn" class="w-full p-3 bg-slate-100 rounded-xl outline-none uppercase"></div>
                 <div><label class="opacity-40 uppercase text-[9px]">Modelo / IP</label><input type="text" id="m_mod" class="w-full p-3 bg-slate-100 rounded-xl outline-none"></div>
